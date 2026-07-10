@@ -3,34 +3,26 @@ on:
   workflow_dispatch:
     inputs:
       query:
-        description: 'Search query'
+        description: 'أمر البحث الكامل (مثل: bili search "تعلم بايثون")'
         required: true
-        default: 'AI news'
-      platform:
-        description: 'Platform (youtube, github, v2ex, bilibili, rss, semantic, web, all)'
-        required: false
-        default: 'youtube'
+        default: 'agent-reach --help'
 
 jobs:
   search:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Python and tools
+      - name: Install tools
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip git
-
-      - name: Install Agent-Reach from GitHub
-        run: |
+          sudo apt install -y python3 python3-pip git curl
           pip install https://github.com/Panniantong/agent-reach/archive/main.zip
-
-      - name: Setup Agent-Reach environment
-        run: |
           agent-reach install --env=auto
 
-      - name: Run search and save results
+      - name: Execute command
         run: |
-          agent-reach search "${{ github.event.inputs.query }}" --platform ${{ github.event.inputs.platform }} --output results.txt
+          echo "تنفيذ: ${{ github.event.inputs.query }}"
+          echo "==================== النتائج ===================="
+          eval "${{ github.event.inputs.query }}" | tee results.txt
 
       - name: Upload results
         uses: actions/upload-artifact@v4

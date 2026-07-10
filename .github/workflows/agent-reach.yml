@@ -1,9 +1,9 @@
-name: Agent Reach Test
+name: Agent Reach - Full Search Tool
 on:
   workflow_dispatch:
     inputs:
       query:
-        description: 'أمر البحث الكامل (مثل: bili search "تعلم بايثون")'
+        description: 'أمر البحث الكامل (مثل: bili search "تعلم بايثون" --type video -n 5)'
         required: true
         default: 'bili search "AI" --type video -n 3'
 
@@ -11,22 +11,53 @@ jobs:
   search:
     runs-on: ubuntu-latest
     steps:
-      - name: Install tools
+      - name: Update and install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip git curl
+          sudo apt install -y python3 python3-pip python3-venv git curl wget
+
+      - name: Install Agent-Reach core
+        run: |
           pip install https://github.com/Panniantong/agent-reach/archive/main.zip
+
+      - name: Setup Agent-Reach environment
+        run: |
           agent-reach install --env=auto
 
-      - name: Execute command and save output
+      - name: Install additional platform tools
         run: |
-          echo "تنفيذ: ${{ github.event.inputs.query }}"
-          echo "==================== النتائج ===================="
-          bash -c "${{ github.event.inputs.query }}" > results.txt 2>&1
-          cat results.txt  # لعرض النتيجة في الـ logs
+          # Bilibili CLI - للبحث عن فيديوهات
+          pip install bilibili-cli
+          
+          # GitHub CLI - للبحث في المستودعات
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install -y gh
 
-      - name: Upload results
+      - name: Verify installed tools
+        run: |
+          echo "========== الأدوات المثبتة =========="
+          echo "bili: $(which bili || echo 'غير موجود')"
+          echo "gh: $(which gh || echo 'غير موجود')"
+          echo "curl: $(which curl || echo 'غير موجود')"
+          echo "agent-reach: $(which agent-reach || echo 'غير موجود')"
+          echo "======================================="
+
+      - name: Execute search command and save output
+        run: |
+          echo "🔍 تنفيذ الأمر: ${{ github.event.inputs.query }}"
+          echo "==================== النتائج ===================="
+          bash -c "${{ github.event.inputs.query }}" 2>&1 | tee results.txt
+
+      - name: Display first 50 lines of results
+        run: |
+          echo "==================== أول 50 سطراً من النتائج ===================="
+          head -50 results.txt
+
+      - name: Upload full results as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: results
+          name: search-results
           path: results.txt
+          retention-days: 7

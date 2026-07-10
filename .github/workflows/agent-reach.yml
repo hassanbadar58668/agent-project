@@ -1,63 +1,48 @@
-name: Agent Reach - Full Search Tool
+name: Agent Reach - YouTube Search with yt-dlp
 on:
   workflow_dispatch:
     inputs:
       query:
-        description: 'أمر البحث الكامل (مثل: bili search "تعلم بايثون" --type video -n 5)'
+        description: 'كلمة البحث (مثل: تعلم بايثون)'
         required: true
-        default: 'bili search "AI" --type video -n 3'
+        default: 'برمجة'
+      limit:
+        description: 'عدد النتائج (1-50)'
+        required: false
+        default: '10'
 
 jobs:
   search:
     runs-on: ubuntu-latest
     steps:
-      - name: Update and install system dependencies
+      - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip python3-venv git curl wget
+          sudo apt install -y python3 python3-pip git curl wget ffmpeg
 
-      - name: Install Agent-Reach core
+      - name: Install yt-dlp
         run: |
-          pip install https://github.com/Panniantong/agent-reach/archive/main.zip
+          pip install yt-dlp
 
-      - name: Setup Agent-Reach environment
+      - name: Search YouTube and save results
         run: |
-          agent-reach install --env=auto
-
-      - name: Install additional platform tools
-        run: |
-          # Bilibili CLI - للبحث عن فيديوهات
-          pip install bilibili-cli
-          
-          # GitHub CLI - للبحث في المستودعات
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install -y gh
-
-      - name: Verify installed tools
-        run: |
-          echo "========== الأدوات المثبتة =========="
-          echo "bili: $(which bili || echo 'غير موجود')"
-          echo "gh: $(which gh || echo 'غير موجود')"
-          echo "curl: $(which curl || echo 'غير موجود')"
-          echo "agent-reach: $(which agent-reach || echo 'غير موجود')"
-          echo "======================================="
-
-      - name: Execute search command and save output
-        run: |
-          echo "🔍 تنفيذ الأمر: ${{ github.event.inputs.query }}"
+          echo "🔍 البحث عن: ${{ github.event.inputs.query }}"
+          echo "📊 عدد النتائج: ${{ github.event.inputs.limit }}"
           echo "==================== النتائج ===================="
-          bash -c "${{ github.event.inputs.query }}" 2>&1 | tee results.txt
+          yt-dlp "ytsearch${{ github.event.inputs.limit }}:${{ github.event.inputs.query }}" \
+            --dump-json \
+            --no-warnings \
+            --quiet > results.json
+          echo "✅ تم حفظ النتائج في results.json"
 
-      - name: Display first 50 lines of results
+      - name: Display first 3 results summary
         run: |
-          echo "==================== أول 50 سطراً من النتائج ===================="
-          head -50 results.txt
+          echo "==================== ملخص النتائج ===================="
+          cat results.json | jq -r '.title' | head -3
 
-      - name: Upload full results as artifact
+      - name: Upload results as JSON
         uses: actions/upload-artifact@v4
         with:
-          name: search-results
-          path: results.txt
+          name: youtube-results
+          path: results.json
           retention-days: 7

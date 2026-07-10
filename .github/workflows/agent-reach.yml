@@ -24,6 +24,12 @@ jobs:
         run: |
           agent-reach install --env=auto
 
-      - name: Run search
+      - name: Run search and save results
         run: |
-          agent-reach doctor
+          agent-reach doctor > results.txt
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: results.txt

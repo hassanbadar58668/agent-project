@@ -1,45 +1,57 @@
-name: Agent Reach - YouTube Search with yt-dlp
+name: YouTube Search with PO Token
 on:
   workflow_dispatch:
     inputs:
       query:
-        description: 'كلمة البحث (مثل: تعلم بايثون)'
+        description: 'كلمة البحث'
         required: true
-        default: 'برمجة'
+        default: 'تعلم بايثون'
       limit:
-        description: 'عدد النتائج (1-50)'
+        description: 'عدد النتائج'
         required: false
-        default: '10'
+        default: '5'
 
 jobs:
   search:
     runs-on: ubuntu-latest
+
+    services:
+      pot-provider:
+        image: brainicism/bgutil-ytdlp-pot-provider:latest
+        ports:
+          - 4416:4416
+
     steps:
-      - name: Install system dependencies
+      - name: تثبيت الأدوات الأساسية
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip git curl wget ffmpeg
+          sudo apt install -y python3 python3-pip ffmpeg curl jq unzip
 
-      - name: Install yt-dlp
+      - name: تثبيت yt-dlp مع PO Token Provider
         run: |
-          pip install yt-dlp
+          pip install -U yt-dlp
+          curl -L -o bgutil-plugin.zip \
+            https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/latest/download/bgutil-ytdlp-pot-provider.zip
+          mkdir -p ~/.config/yt-dlp/plugins
+          unzip -o bgutil-plugin.zip -d ~/.config/yt-dlp/plugins/
 
-      - name: Search YouTube and save results
+      - name: انتظار جاهزية خادم التوكن
         run: |
-          echo "🔍 البحث عن: ${{ github.event.inputs.query }}"
-          echo "📊 عدد النتائج: ${{ github.event.inputs.limit }}"
-          echo "==================== النتائج ===================="
+          echo "⏳ بانتظار تشغيل الخادم..."
+          sleep 10
+
+      - name: البحث وجلب النتائج
+        run: |
           yt-dlp "ytsearch${{ github.event.inputs.limit }}:${{ github.event.inputs.query }}" \
             --skip-download \
-            --print "%(title)s | %(uploader)s | %(view_count)s | %(duration)s" \
+            --pot-provider http://localhost:4416 \
+            --extractor-args "youtube:player-client=android" \
+            --print "%(title)s | %(uploader)s | %(view_count)s" \
             --no-warnings \
-            --quiet \
-            2>&1 | tee results.txt
-          echo "✅ تم حفظ النتائج في results.txt"
+            --quiet > results.txt
 
-      - name: Upload results as text
+      - name: رفع النتائج
         uses: actions/upload-artifact@v4
         with:
           name: youtube-results
           path: results.txt
-          retention-days: 7

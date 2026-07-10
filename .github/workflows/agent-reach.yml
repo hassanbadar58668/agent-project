@@ -1,0 +1,36 @@
+name: Agent Reach - Search & Fetch
+
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: 'ما الذي تبحث عنه؟'
+        required: true
+        default: 'أحدث أخبار التقنية'
+      platform:
+        description: 'المنصة (youtube, reddit, github, x)'
+        required: false
+        default: 'youtube'
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    steps:
+      - name: تثبيت Python والأدوات
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip ffmpeg
+          pip3 install agent-reach
+
+      - name: تنفيذ البحث
+        run: |
+          agent-reach search "${{ github.event.inputs.query }}" \
+            --platform ${{ github.event.inputs.platform }} \
+            --output results.json \
+            --verbose
+
+      - name: رفع النتائج
+        uses: actions/upload-artifact@v4
+        with:
+          name: search-results
+          path: results.json

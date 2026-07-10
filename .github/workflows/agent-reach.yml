@@ -5,7 +5,7 @@ on:
       query:
         description: 'أمر البحث الكامل (مثل: bili search "تعلم بايثون")'
         required: true
-        default: 'agent-reach --help'
+        default: 'bili search "AI" --type video -n 3'
 
 jobs:
   search:
@@ -18,11 +18,12 @@ jobs:
           pip install https://github.com/Panniantong/agent-reach/archive/main.zip
           agent-reach install --env=auto
 
-      - name: Execute command
+      - name: Execute command and save output
         run: |
           echo "تنفيذ: ${{ github.event.inputs.query }}"
           echo "==================== النتائج ===================="
-          eval "${{ github.event.inputs.query }}" | tee results.txt
+          bash -c "${{ github.event.inputs.query }}" > results.txt 2>&1
+          cat results.txt  # لعرض النتيجة في الـ logs
 
       - name: Upload results
         uses: actions/upload-artifact@v4

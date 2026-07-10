@@ -1,36 +1,28 @@
-name: Agent Reach - Search & Fetch
-
+name: Agent Reach Test
 on:
   workflow_dispatch:
     inputs:
       query:
-        description: 'ما الذي تبحث عنه؟'
+        description: 'Search query'
         required: true
-        default: 'أحدث أخبار التقنية'
-      platform:
-        description: 'المنصة (youtube, reddit, github, x)'
-        required: false
-        default: 'youtube'
+        default: 'AI news'
 
 jobs:
   search:
     runs-on: ubuntu-latest
     steps:
-      - name: تثبيت Python والأدوات
+      - name: Install Node.js and tools
         run: |
           sudo apt update
-          sudo apt install -y python3-pip ffmpeg
-          pip3 install agent-reach
+          sudo apt install -y nodejs npm git
 
-      - name: تنفيذ البحث
+      - name: Clone Agent-Reach
         run: |
-          agent-reach search "${{ github.event.inputs.query }}" \
-            --platform ${{ github.event.inputs.platform }} \
-            --output results.json \
-            --verbose
+          git clone https://github.com/Panniantong/Agent-Reach.git
+          cd Agent-Reach
+          npm install
 
-      - name: رفع النتائج
-        uses: actions/upload-artifact@v4
-        with:
-          name: search-results
-          path: results.json
+      - name: Run search
+        run: |
+          cd Agent-Reach
+          node index.js search "${{ github.event.inputs.query }}"

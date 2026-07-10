@@ -22,7 +22,7 @@ jobs:
 
       - name: Setup Agent-Reach environment
         run: |
-          agent-reach install --env=auto --non-interactive
+          agent-reach install --env=auto
 
       - name: Run search
         run: |

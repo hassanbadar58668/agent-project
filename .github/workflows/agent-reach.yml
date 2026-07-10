@@ -11,18 +11,19 @@ jobs:
   search:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Node.js and tools
+      - name: Install Python and tools
         run: |
           sudo apt update
-          sudo apt install -y nodejs npm git
+          sudo apt install -y python3 python3-pip git
 
-      - name: Clone Agent-Reach
+      - name: Install Agent-Reach from GitHub
         run: |
-          git clone https://github.com/Panniantong/Agent-Reach.git
-          cd Agent-Reach
-          npm install
+          pip install https://github.com/Panniantong/agent-reach/archive/main.zip
+
+      - name: Setup Agent-Reach environment
+        run: |
+          agent-reach install --env=auto --non-interactive
 
       - name: Run search
         run: |
-          cd Agent-Reach
-          node index.js search "${{ github.event.inputs.query }}"
+          agent-reach doctor

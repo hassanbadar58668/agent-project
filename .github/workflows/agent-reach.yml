@@ -6,6 +6,10 @@ on:
         description: 'Search query'
         required: true
         default: 'AI news'
+      platform:
+        description: 'Platform (youtube, github, v2ex, bilibili, rss, semantic, web, all)'
+        required: false
+        default: 'youtube'
 
 jobs:
   search:
@@ -26,7 +30,7 @@ jobs:
 
       - name: Run search and save results
         run: |
-          agent-reach doctor > results.txt
+          agent-reach search "${{ github.event.inputs.query }}" --platform ${{ github.event.inputs.platform }} --output results.txt
 
       - name: Upload results
         uses: actions/upload-artifact@v4

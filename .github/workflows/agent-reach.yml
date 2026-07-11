@@ -25,15 +25,12 @@ jobs:
       - name: تثبيت الأدوات الأساسية
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip ffmpeg curl jq unzip
+          sudo apt install -y python3 python3-pip ffmpeg curl jq
 
       - name: تثبيت yt-dlp مع PO Token Provider
         run: |
           pip install -U yt-dlp
-          curl -L -o bgutil-plugin.zip \
-            https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/latest/download/bgutil-ytdlp-pot-provider.zip
-          mkdir -p ~/.config/yt-dlp/plugins
-          unzip -o bgutil-plugin.zip -d ~/.config/yt-dlp/plugins/
+          pip install -U bgutil-ytdlp-pot-provider
 
       - name: انتظار جاهزية خادم التوكن
         run: |
@@ -47,8 +44,7 @@ jobs:
             --pot-provider http://localhost:4416 \
             --extractor-args "youtube:player-client=android" \
             --print "%(title)s | %(uploader)s | %(view_count)s" \
-            --no-warnings \
-            --quiet > results.txt
+            --no-warnings > results.txt
 
       - name: رفع النتائج
         uses: actions/upload-artifact@v4
